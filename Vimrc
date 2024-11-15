@@ -1,0 +1,62 @@
+" Vim configuration file for Windows (_vimrc)
+
+"--------------------------------------------
+
+
+" Set the runtime path for vim-go and NERDTree
+
+set runtimepath+=C:\Users\<YourUsername>\vimfiles\pack\plugins\start\vim-go
+
+set runtimepath+=C:\Users\<YourUsername>\vimfiles\pack\plugins\start\nerdtree
+
+
+" Basic settings
+
+set number " Show line numbers
+
+syntax on " Enable syntax highlighting
+
+set tabstop=4 " Set tab width to 4 spaces
+
+set shiftwidth=4 " Set indentation width to 4 spaces
+
+set expandtab " Convert tabs to spaces
+
+
+" vim-go settings
+
+let g:go_autodetect_gopath = 1
+
+let g:go_fmt_command = "goimports"
+
+
+" NERDTree settings
+
+autocmd vimenter * NERDTree " Automatically open NERDTree on startup
+
+map <C-n> :NERDTreeToggle<CR> " Toggle NERDTree with Ctrl+n
+
+let NERDTreeShowHidden=1 " Show hidden files in NERDTree
+
+
+" Other personal configurations
+
+set cursorline " Highlight the current line
+
+set wildmenu " Enable command-line completion
+
+set hlsearch " Highlight search results
+
+
+" Optional: Add more personal settings below
+
+"--------------------------------------------
+
+
+" Save and quit
+
+filetype plugin indent on
+
+
+Get Outlook for Android
+
