@@ -1,1 +1,76 @@
-" Enable syntax highlighting syntax on " Set background color set background=dark " Change to 'light' for light mode " Use the Gruvbox color scheme colorscheme gruvbox " General settings set number " Show line numbers set relativenumber " Show relative line numbers set mouse=a " Enable mouse support set nowrap " Don't wrap lines set tabstop=4 " Number of spaces tabs count for set shiftwidth=4 " Number of spaces to use for each step of (auto)indent set expandtab " Use spaces instead of tabs set scrolloff=3 " Keep 3 lines above/below the cursor set sidescrolloff=5 " Keep 5 columns left/right of the cursor " Performance options set lazyredraw " Don't redraw while executing macros set history=1000 " Increase command history size " User interface options set laststatus=2 " Always show the status line set showcmd " Show command in bottom bar set wildmenu " Enhanced command-line completion " File type settings filetype plugin indent on " Additional settings for better editing experience set autoindent " Enable automatic indentation set smartindent " Smart indentation based on context " Optional: Toggle background with F5 (if you set up Gruvbox with toggle) nnoremap <silent> <F5> :call gruvbox#bg_toggle()<CR>
+" Enable syntax highlighting
+syntax on
+
+" Set background color
+set background=dark  " Change to 'light' for light mode
+
+" Use the Gruvbox8 color scheme
+set runtimepath+=C:\Users\<YourUsername>\vimfiles\pack\plugins\start\gruvbox8
+colorscheme gruvbox8
+
+" General settings
+set number              " Show line numbers
+set relativenumber      " Show relative line numbers
+set mouse=a             " Enable mouse support
+set nowrap              " Don't wrap lines
+set tabstop=4           " Number of spaces tabs count for
+set shiftwidth=4        " Number of spaces to use for each step of (auto)indent
+set expandtab           " Use spaces instead of tabs
+set scrolloff=3         " Keep 3 lines above/below the cursor
+set sidescrolloff=5     " Keep 5 columns left/right of the cursor
+
+" Performance options
+set lazyredraw          " Don't redraw while executing macros
+set history=1000        " Increase command history size
+
+" User interface options
+set laststatus=2        " Always show the status line
+set showcmd             " Show command in bottom bar
+set wildmenu            " Enhanced command-line completion
+
+" File type settings
+filetype plugin indent on
+
+" Additional settings for better editing experience
+set autoindent          " Enable automatic indentation
+set smartindent         " Smart indentation based on context
+
+" Optional: Toggle background with F5 (if you set up Gruvbox with toggle)
+nnoremap <silent> <F5> :call gruvbox#bg_toggle()<CR>
+
+" Add more useful configurations below
+"--------------------------------------------
+
+" Clipboard settings
+set clipboard=unnamedplus    " Use the system clipboard for copy and paste
+
+" Enhanced searching
+set incsearch                " Show search matches as you type
+set hlsearch                 " Highlight all search results
+set ignorecase               " Ignore case while searching
+set smartcase                " Override ignorecase if search pattern contains uppercase letters
+
+" Timeouts
+set ttimeout                 " Enable key code timeout
+set ttimeoutlen=50           " Reduce the time it takes to recognize key codes
+
+" Visual enhancements
+set cursorline               " Highlight the current line
+set cursorcolumn             " Highlight the current column
+set colorcolumn=80           " Highlight the 80th column for better code readability
+
+" Auto-completion
+set completeopt=menuone,noselect   " Better completion experience
+" Plugin for auto-completion if using YouCompleteMe
+"if has("nvim")
+"    Plug 'neoclide/coc.nvim', {'branch': 'release'}
+"endif
+
+" Split navigation
+nnoremap <silent> <C-h> <C-w>h   " Navigate left
+nnoremap <silent> <C-j> <C-w>j   " Navigate down
+nnoremap <silent> <C-k> <C-w>k   " Navigate up
+nnoremap <silent> <C-l> <C-w>l   " Navigate right
+
+" Status line
+set statusline=%f%m%r%h%w\[FORMAT=%{&ff}] [TYPE=%Y] [POS=%l,%v][%p%%]
