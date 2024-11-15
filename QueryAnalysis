@@ -1,0 +1,83 @@
+Given that the tables are present in `sys.tables` but not appearing in your query results, let's further investigate the issue. Here are a few focused steps to troubleshoot and adjust the query:
+
+### **Troubleshooting Steps**
+
+1. **Check the Basic Query for Missing Tables**:
+   Start with a simplified query to ensure the tables appear without additional joins and filters:
+   ```sql
+   SELECT 
+       sch.name AS SCHEMA_NAME, 
+       tab.name AS TABLE_NAME 
+   FROM sys.tables AS tab 
+   INNER JOIN sys.schemas AS sch ON tab.[schema_id] = sch.[schema_id] 
+   WHERE sch.name = 'dbo';
+   ```
+
+2. **Check for Indexes**:
+   Ensure the tables have indexes, as the original query joins `sys.indexes`:
+   ```sql
+   SELECT 
+       tab.name AS TABLE_NAME, 
+       idx.name AS INDEX_NAME 
+   FROM sys.tables AS tab 
+   LEFT JOIN sys.indexes AS idx ON tab.object_id = idx.object_id 
+   WHERE tab.name IN ('YourTable1', 'YourTable2') 
+     AND tab.schema_id = SCHEMA_ID('dbo');
+   ```
+
+3. **Check for Columns and Data Types**:
+   Verify that columns and data types are properly recognized:
+   ```sql
+   SELECT 
+       tab.name AS TABLE_NAME, 
+       col.name AS COLUMN_NAME, 
+       typ.name AS DATA_TYPE 
+   FROM sys.tables AS tab 
+   INNER JOIN sys.columns AS col ON tab.object_id = col.object_id 
+   INNER JOIN sys.types AS typ ON col.user_type_id = typ.user_type_id 
+   WHERE tab.name IN ('YourTable1', 'YourTable2') 
+     AND tab.schema_id = SCHEMA_ID('dbo');
+   ```
+
+### **Revised Query for Detailed Inspection**
+
+You can run a revised version of your query that simplifies some of the joins and focuses on whether constraints might be causing issues:
+```sql
+SELECT  
+    sch.name AS SCHEMA_NAME, 
+    tab.name AS TABLE_NAME, 
+    col.name AS COLUMN_NAME, 
+    typ.name AS DATA_TYPE, 
+    col.max_length AS DATA_LENGTH, 
+    col.is_nullable, 
+    part.rows AS ROW_COUNT, 
+    CASE WHEN tcons.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 1 ELSE 0 END AS PRIMARY_KEY, 
+    CASE WHEN tcons.CONSTRAINT_TYPE = 'UNIQUE' THEN 1 ELSE 0 END AS UNIQUE_KEY, 
+    col.is_identity AS IDENTITY_COLUMN, 
+    CASE WHEN tcons.CONSTRAINT_TYPE = 'FOREIGN KEY' THEN 1 ELSE 0 END AS FOREIGN_KEY
+FROM sys.tables AS tab 
+INNER JOIN sys.schemas AS sch ON tab.schema_id = sch.schema_id 
+LEFT JOIN sys.columns AS col ON tab.object_id = col.object_id 
+LEFT JOIN (SELECT object_id, SUM(rows) AS rows FROM sys.partitions WHERE index_id < 2 AND rows IS NOT NULL GROUP BY object_id) AS part ON tab.object_id = part.object_id 
+LEFT JOIN sys.types AS typ ON typ.user_type_id = col.user_type_id 
+LEFT JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu ON tab.name = kcu.TABLE_NAME AND kcu.CONSTRAINT_SCHEMA = sch.name AND kcu.COLUMN_NAME = col.name 
+LEFT JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS tcons ON tcons.TABLE_NAME = tab.name AND tcons.TABLE_SCHEMA = sch.name AND tcons.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME 
+WHERE sch.name = 'dbo'
+GROUP BY 
+    sch.name, 
+    tab.name, 
+    col.name, 
+    typ.name, 
+    col.max_length, 
+    col.is_nullable, 
+    col.is_identity, 
+    part.rows, 
+    tcons.CONSTRAINT_TYPE;
+```
+
+### **Next Steps**
+- **Run the simplified queries** to identify any missing tables.
+- **Check for constraints and metadata** that might be causing tables to be filtered out.
+- **Incrementally add back complexity** to see at which point the tables disappear.
+
+If the issue persists, providing specific details about the tables and their schemas can help in further diagnosing the problem. Let me know if you need additional assistance or if there are other aspects you'd like to explore! 😊
