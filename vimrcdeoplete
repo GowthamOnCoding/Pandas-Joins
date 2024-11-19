@@ -1,0 +1,21 @@
+" deoplete settings
+let g:deoplete#enable_at_startup = 1
+call deoplete#custom#option('omni_patterns', {'go': '[^. *\t].\w*'})
+
+" vim-go settings
+let g:go_auto_sameids = 1
+let g:go_fmt_command = "goimports"
+let g:go_fmt_autosave = 1
+let g:go_def_mode = "gopls"
+let g:go_info_mode = "gopls"
+
+" Key mappings for vim-go
+autocmd FileType go nmap <leader>b :GoBuild<CR>
+autocmd FileType go nmap <leader>r :GoRun<CR>
+autocmd FileType go nmap <leader>t :GoTest<CR>
+autocmd FileType go nmap <leader>c :GoCoverageToggle<CR>
+autocmd FileType go nmap <leader>i :GoImpl<CR>
+autocmd FileType go nmap <leader>g :GoGenerate<CR>
+autocmd FileType go nmap <leader>m :GoMetaLinter<CR>
+autocmd FileType go nmap <leader>d :GoDoc<CR>
+autocmd FileType go nmap <leader>f :GoFmt<CR>
