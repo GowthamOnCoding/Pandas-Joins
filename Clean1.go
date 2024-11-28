@@ -25,24 +25,27 @@ func main() {
 
 	ch := make(chan string, 100)
 
-	// Start goroutine to process lines
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for line := range ch {
-			columns := strings.Split(line, ",")
-			if len(columns) >= 5 {
-				givenNameOne := strings.TrimSpace(columns[0])
-				lastName := strings.TrimSpace(columns[4])
-				if givenNameOne != "" && lastName != "" {
-					fullName := strings.ToLower(givenNameOne + " " + lastName)
-					mu.Lock()
-					namesMap[fullName] = struct{}{}
-					mu.Unlock()
+	// Start goroutines to process lines
+	numWorkers := 4 // Number of goroutines to use
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for line := range ch {
+				columns := strings.Split(line, ",")
+				if len(columns) >= 5 {
+					givenNameOne := strings.TrimSpace(columns[0])
+					lastName := strings.TrimSpace(columns[4])
+					if givenNameOne != "" && lastName != "" {
+						fullName := strings.ToLower(givenNameOne + " " + lastName)
+						mu.Lock()
+						namesMap[fullName] = struct{}{}
+						mu.Unlock()
+					}
 				}
 			}
-		}
-	}()
+		}()
+	}
 
 	reader := bufio.NewReader(file)
 
@@ -56,16 +59,18 @@ func main() {
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			if err != os.EOF {
+			if err.Error() == "EOF" {
+				break
+			} else if err != nil {
 				fmt.Println("Error reading file:", err)
+				break
 			}
-			break
 		}
 		ch <- line
 	}
 	close(ch)
 
-	// Wait for processing goroutine to finish
+	// Wait for all processing goroutines to finish
 	wg.Wait()
 
 	names := make([]string, 0, len(namesMap))
