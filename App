@@ -1,0 +1,65 @@
+Absolutely! Here's a version tailored for your appraisal:
+
+---
+
+**Achievements in Discovery 2.0**
+
+**Development:**
+
+- Successfully enhanced the SECO framework by integrating AIML, IDW, and IEDPS for SDD discovery, alongside Funnel.
+- Incorporated new data sources such as Quartz, Mainframe Files, Sybase, MySQL, Files, and Teradata into SECO execution.
+- Improved the SECO framework to include IDW for FFT discovery in addition to Funnel.
+- Implemented mandatory requirements for SDD execution and validation results to initiate FFT discovery.
+- Identified and resolved false negatives or false positives reported through manual validation or by application owners on Funnel discovery. Performed root cause analysis and addressed identified issues.
+- Migrated Spring Boot from version 2.7 to 3.4.0 for all components to address vulnerabilities.
+- Collaborated with the IDW, AIML, and IEDPS teams to integrate their tools into the SECO framework, making necessary component adjustments.
+- Established the development environment (dev env) for the E2E framework by adapting our components and database.
+- Upgraded the Kafka-clients library version to 3.8 in Java producers, ensuring robustness and preventing Timeout exceptions.
+
+**Delivery:**
+
+- Completed all mandatory training on time without delays.
+- Mentored new team members on technical challenges in the project.
+- Ensured periodic code commits to keep the Bitbucket repository in sync. Conducted timely code reviews to maintain high programming standards and approved pull requests after validating components.
+- Provided training to the execution team on the new D2.0 process to certify the process in UAT and deploy the changes to PROD.
+- Worked diligently to avoid any GIS or Infosec violations.
+
+**Quality Assurance:**
+
+- Assisted the QA team by providing essential test cases for end-to-end components.
+- Dedicated weekend efforts to complete System Integration Testing (SIT), addressing issues identified during SIT and User Acceptance Testing (UAT).
+
+**Discovery/Kafka BAU & Production Issues:**
+
+- Assisted with business-as-usual activities and provided production support for the SECO framework, Funnel, and D3 dashboard, implementing code fixes when necessary.
+
+**Learnings:**
+
+- Gained proficiency in Go programming language, enhancing my ability to develop cloud-native applications with high performance and scalability.
+- Acquired knowledge in Machine Learning and NLP.
+- Completed the Java Full Stack Engineering program within the given timeframe.
+
+**Automation:**
+
+- Conceptualized and designed an automation framework for SIT test cases using Golang, collaborating with the QA team. The POC is currently 80% complete.
+
+**OPEX Savings:**
+
+- Collaborated on the Discovery Metadata Dashboard (Case ID 31814), resulting in a certified capacity benefit of 6066 hours by the OPEX team.
+
+**Knowledge Transfer:**
+
+- Conducted training sessions on the SECO framework for new team members and the production support team.
+
+**Recruitment Activities:**
+
+- Conducted interviews for new team members and participated in campus recruitment drives.
+
+**Volunteering:**
+
+- Supported college students in enhancing their job readiness on International Women's Day.
+- Participated in the Joy of Giving activity.
+
+---
+
+I hope this helps present your achievements effectively! If you need any further adjustments, feel free to let me know.
