@@ -1,0 +1,209 @@
+// 1. Step Configuration Entity for DB lookup
+@Entity
+@Table(name = "STEP_CONFIG")
+public class StepConfiguration {
+    @Id
+    private String stepName;
+    
+    @Column(nullable = false)
+    private String parameterSchema;  // JSON Schema for parameters
+    
+    @Column(nullable = false)
+    private Integer timeoutSeconds;
+    
+    @Column(nullable = false)
+    private Integer maxRetries;
+    
+    @Column
+    private String description;
+    
+    // Getters and setters
+}
+
+// 2. Parameter Validator using JSON Schema
+@Component
+public class ParameterValidator {
+    private final JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
+    private final Map<String, JsonSchema> schemaCache = new ConcurrentHashMap<>();
+    
+    public void validateParameters(String stepName, Map<String, String> parameters, String schema) {
+        JsonSchema jsonSchema = schemaCache.computeIfAbsent(stepName, k -> {
+            try {
+                return factory.getJsonSchema(JsonLoader.fromString(schema));
+            } catch (Exception e) {
+                throw new IllegalStateException("Invalid schema for step: " + stepName, e);
+            }
+        });
+        
+        try {
+            JsonNode parametersNode = new ObjectMapper().valueToTree(parameters);
+            ProcessingReport report = jsonSchema.validate(parametersNode);
+            if (!report.isSuccess()) {
+                throw new IllegalArgumentException("Invalid parameters for step: " + stepName + 
+                    ", Errors: " + report);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Parameter validation failed", e);
+        }
+    }
+}
+
+// 3. Step Configuration Service
+@Service
+@Transactional(readOnly = true)
+public class StepConfigurationService {
+    private final JdbcTemplate jdbcTemplate;
+    private final ParameterValidator validator;
+    
+    @Autowired
+    public StepConfigurationService(JdbcTemplate jdbcTemplate, ParameterValidator validator) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.validator = validator;
+    }
+    
+    @Cacheable("stepConfigurations")
+    public StepConfiguration getStepConfiguration(String stepName) {
+        return jdbcTemplate.queryForObject(
+            "SELECT * FROM STEP_CONFIG WHERE STEP_NAME = ?",
+            new Object[]{stepName},
+            (rs, rowNum) -> {
+                StepConfiguration config = new StepConfiguration();
+                config.setStepName(rs.getString("STEP_NAME"));
+                config.setParameterSchema(rs.getString("PARAMETER_SCHEMA"));
+                config.setTimeoutSeconds(rs.getInt("TIMEOUT_SECONDS"));
+                config.setMaxRetries(rs.getInt("MAX_RETRIES"));
+                config.setDescription(rs.getString("DESCRIPTION"));
+                return config;
+            }
+        );
+    }
+}
+
+// 4. Virtual Thread Executor Service
+@Component
+public class VirtualThreadExecutorService {
+    private static final Logger logger = LoggerFactory.getLogger(VirtualThreadExecutorService.class);
+    
+    public CompletableFuture<Void> executeInVirtualThread(Runnable task, String taskName) {
+        return CompletableFuture.runAsync(() -> {
+            Thread.Builder.virtual()
+                .name(taskName)
+                .uncaughtExceptionHandler((thread, throwable) -> 
+                    logger.error("Error in virtual thread: " + thread.getName(), throwable))
+                .start(task);
+        });
+    }
+}
+
+// 5. Enhanced Test Case Processor Route
+@Component
+public class TestCaseProcessorRoute extends RouteBuilder {
+    private final TestCaseStepProcessorFactory processorFactory;
+    private final StepConfigurationService stepConfigService;
+    private final VirtualThreadExecutorService virtualThreadExecutor;
+    private final MetricsService metricsService;
+    
+    @Override
+    public void configure() {
+        // Main processing route using virtual threads
+        from("sql:SELECT * FROM TC_MASTER WHERE FLAG = 'ENABLED'?delay=5000")
+            .routeId("TestCaseProcessor")
+            .split(body())
+            .process(exchange -> {
+                Map<String, Object> testCase = exchange.getIn().getBody(Map.class);
+                String tcId = testCase.get("TC_ID").toString();
+                
+                virtualThreadExecutor.executeInVirtualThread(
+                    () -> processTestCase(tcId),
+                    "TestCase-" + tcId
+                ).whenComplete((result, error) -> {
+                    if (error != null) {
+                        metricsService.incrementFailedTestCases();
+                        logger.error("Test case {} failed", tcId, error);
+                    } else {
+                        metricsService.incrementCompletedTestCases();
+                    }
+                });
+            });
+    }
+    
+    private void processTestCase(String tcId) {
+        List<Map<String, Object>> steps = fetchSteps(tcId);
+        for (Map<String, Object> step : steps) {
+            String stepName = (String) step.get("STEP_NAME");
+            StepConfiguration config = stepConfigService.getStepConfiguration(stepName);
+            
+            Map<String, String> parameters = extractParameters(step);
+            validator.validateParameters(stepName, parameters, config.getParameterSchema());
+            
+            TestCaseStepProcessor processor = processorFactory.getProcessor(stepName);
+            executeWithRetry(processor, parameters, config);
+        }
+    }
+    
+    private void executeWithRetry(TestCaseStepProcessor processor, 
+                                Map<String, String> parameters, 
+                                StepConfiguration config) {
+        RetryPolicy<Object> retryPolicy = RetryPolicy.builder()
+            .handle(Exception.class)
+            .withMaxRetries(config.getMaxRetries())
+            .withDelay(Duration.ofSeconds(1))
+            .withMaxDuration(Duration.ofSeconds(config.getTimeoutSeconds()))
+            .onRetry(e -> logger.warn("Retrying step: {}", config.getStepName()))
+            .onFailure(e -> logger.error("Step failed after retries: {}", config.getStepName()))
+            .build();
+            
+        Failsafe.with(retryPolicy).run(() -> processor.processStep(parameters));
+    }
+    
+    private List<Map<String, Object>> fetchSteps(String tcId) {
+        return jdbcTemplate.queryForList(
+            "SELECT * FROM TC_STEPS WHERE TC_ID = ? ORDER BY STEP_ID",
+            tcId
+        );
+    }
+}
+
+// 6. Example JSON Schema for parameters
+{
+    "DELETE_INSERT_AIT_SCAN_WINDOW": {
+        "type": "object",
+        "required": ["aitNumber"],
+        "properties": {
+            "aitNumber": {
+                "type": "string",
+                "pattern": "^AIT\\d{6}$"
+            }
+        }
+    },
+    "INVOKE_JAVA_PROCESS": {
+        "type": "object",
+        "required": ["processName", "server"],
+        "properties": {
+            "processName": {
+                "type": "string",
+                "minLength": 1
+            },
+            "server": {
+                "type": "string",
+                "format": "hostname"
+            }
+        }
+    }
+}
+
+// 7. Application Configuration
+@Configuration
+public class TestCaseProcessorConfig {
+    @Bean
+    public ThreadFactory virtualThreadFactory() {
+        return Thread.ofVirtual()
+            .name("TestCase-", 0)
+            .factory();
+    }
+    
+    @Bean
+    public ExecutorService executorService(ThreadFactory virtualThreadFactory) {
+        return Executors.newThreadPerTaskExecutor(virtualThreadFactory);
+    }
+}
